@@ -1,0 +1,80 @@
+graph TD
+    %% 样式定义
+    classDef original fill:#f8f9fa,stroke:#adb5bd,stroke-width:1px,color:#333;
+    classDef upgrade fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+    classDef new fill:#e0f2f1,stroke:#00897b,stroke-width:2px,stroke-dasharray: 5 5,color:#00695c;
+    classDef core fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1;
+
+    %% ================= 1. 北向生态监管层 (新增) =================
+    subgraph Gov ["【新增】跨域监管生态层 (打破数据与监管孤岛)"]
+        direction LR
+        UOM[国家民航局 UOM 系统]:::new
+        MIL[军方空管委]:::new
+        POL[地方公安 / 应急指挥系统]:::new
+    end
+    API((标准跨域监管<br/>API 网关)):::new
+    Gov <-->|飞行计划一键合法报备 / 空域态势同步| API
+
+    %% ================= 2. 终端与网络感知层 (重构) =================
+    subgraph Edge ["【重构】终端接入与通感网络层 (云边端协同保障低延迟)"]
+        direction TB
+        Device["[低空飞行操纵机构 / 地面场站设施 / 空域警戒反制 / 低空数据订阅者接入]<br/>(飞行器注册 / 飞行申请 / 空域警戒识别 / 共享数据发布 / 算力任务提交)"]:::original
+
+        Net("[新增] 5G-A通感一体化网络 / 低轨卫星 / ADS-B<br/>(全域通信覆盖 + 黑飞非合作目标雷达主动感知)"):::new
+
+        MEC{"[新增] MEC低空边缘计算节点<br/>(下沉算力：毫秒级防撞避障 / 局部围栏预警 / 黑飞初判)"}:::new
+
+        Device <--> Net
+        Net <--> MEC
+    end
+    API <-->|国家级合规校验与白名单下发| Device
+
+    %% ================= 3. 门户网站 =================
+    Portal["[低空门户网站]"]:::original
+    MEC <-->|非实时数据上报 / 云端全局策略接收| Portal
+    Device <--> Portal
+
+    %% ================= 4. 核心云端业务中枢 (左侧升级) =================
+    subgraph Cloud ["云端核心业务中枢平台"]
+        direction LR
+
+        subgraph UTM ["[低空交通管理平台] (管、防)"]
+            UTM1("空域全局管控 / 安全审核"):::original
+            UTM2("【升级】四维数字孪生(CIM)底座<br/>(融合城市微气象与复杂电磁环境数据)"):::upgrade
+            UTM3("【升级】应急指挥与自动化物理反制联动系统"):::upgrade
+            UTM2 --- UTM1 --- UTM3
+        end
+
+        subgraph DID ["[DID 平台] (主信)<br/>(数据法规及共性服务)"]
+            DID1("WORM DID 认证<br/>数据目录 / 合规审查<br/>数权服务 / 跨域资源调度"):::core
+        end
+
+        subgraph AI ["[AI 算力任务执行平台] (主用)"]
+            AI1("程序隔离运行 / 本地计算<br/>结果交付 / 计量计费<br/>(安全计算沙箱)"):::core
+        end
+
+        UTM <-->|连接器| DID
+        DID <-->|连接器| AI
+    end
+
+    Portal <--> UTM
+    Portal <--> DID
+    Portal <--> AI
+
+    %% 安防反制闭环连线
+    UTM3 -.->|⚡ 一键自动化打击/驱离指令直达| Device
+
+    %% ================= 5. 底层数据基座 =================
+    subgraph DataBase ["共享可信低空数据资源基座"]
+        direction TB
+        Enc1("固证封装"):::original
+        Enc2("固证封装"):::original
+        DB["[共享可信低空数据资源]<br/>(海量数据存储 / 数据管控 / 元数据管理)          (一系列可信数据桶)"]:::core
+    end
+
+    UTM <-->|VPN 专线| DB
+    DID <-->|连接器| Enc1
+    DID <-->|连接器| Enc2
+    Enc1 <--> DB
+    Enc2 <--> DB
+    AI <-->|VPN 专线| DB
